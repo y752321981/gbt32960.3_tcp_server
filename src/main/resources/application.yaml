@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: gbt32960.3_tcp_server
+  data:
+    redis:
+      host: 172.29.162.176
+      # 端口，默认为6379
+      port: 6379
+      # 数据库索引
+      database: 7
+      # 密码
+      password: 1qaz0OKM
+
+netty:
+  server:
+    host: 0.0.0.0
+    use-epoll: false
+    heart-seconds: 300
+    vehicle-port: 20000
+    platform-port: 20001
+    platform-cache-size: 52428800
+    vehicle-cache-size: 5120
+
+logging:
+  config: classpath:logback.xml
