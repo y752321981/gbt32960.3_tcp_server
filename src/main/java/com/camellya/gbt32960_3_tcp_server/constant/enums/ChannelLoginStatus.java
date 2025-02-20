@@ -1,4 +1,4 @@
-package com.camellya.gbt32960_3_tcp_server.enums;
+package com.camellya.gbt32960_3_tcp_server.constant.enums;
 
 public enum ChannelLoginStatus {
 

@@ -2,20 +2,10 @@ package com.camellya.gbt32960_3_tcp_server.handler;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson2.JSONObject;
-import com.yin.tcpserver.annotation.Command;
-import com.yin.tcpserver.pojo.constant.RedisKeyConstants;
-import com.yin.tcpserver.pojo.entity.LoginInfo;
-import com.yin.tcpserver.pojo.entity.VehicleRuntimeInfo;
-import com.yin.tcpserver.pojo.enums.AckEnum;
-import com.yin.tcpserver.pojo.enums.InfoReportDataEnum;
-import com.yin.tcpserver.pojo.protocol.GBT32960Packet;
-import com.yin.tcpserver.pojo.protocol.InfoModel;
-import com.yin.tcpserver.pojo.protocol.LoginModel;
-import com.yin.tcpserver.pojo.protocol.infomodel.BaseInfoModel;
-import com.yin.tcpserver.pojo.protocol.infomodel.LocateModel;
-import com.yin.tcpserver.pojo.protocol.infomodel.VehicleModel;
-import com.yin.tcpserver.service.IAuthService;
-import com.yin.tcpserver.service.IChannelService;
+import com.camellya.gbt32960_3_tcp_server.annotation.Command;
+import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
+import com.camellya.gbt32960_3_tcp_server.protocol.LoginModel;
+import com.camellya.gbt32960_3_tcp_server.service.IChannelService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import jakarta.annotation.Resource;
@@ -28,14 +18,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.yin.tcpserver.pojo.enums.CommandEnum.*;
+import static com.camellya.gbt32960_3_tcp_server.constant.enums.CommandEnum.*;
 
 @Slf4j
 @Component
 public class CommandHandler {
-
-    @Resource
-    private IAuthService authService;
 
     @Resource
     private IChannelService channelService;

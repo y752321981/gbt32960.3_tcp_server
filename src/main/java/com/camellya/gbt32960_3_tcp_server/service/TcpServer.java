@@ -1,14 +1,17 @@
 package com.camellya.gbt32960_3_tcp_server.service;
 
-import com.camellya.gbt32960_3_tcp_server.config.NettyChannelInit;
 import com.camellya.gbt32960_3_tcp_server.config.TcpServerProperties;
+import com.camellya.gbt32960_3_tcp_server.handler.*;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
@@ -16,13 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
-public class TcpServer {
-
-    @Resource
-    private NettyChannelInit channelInit;
+public class TcpServer extends ChannelInitializer<SocketChannel>  {
 
     @Resource
     private TcpServerProperties serverProperties;
@@ -41,7 +42,7 @@ public class TcpServer {
                     .group(bossGroup, workerGroup)
                     .channel(serverProperties.getUseEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
                     // 配置 编码器、解码器、业务处理
-                    .childHandler(channelInit)
+                    .childHandler(this)
                     // tcp缓冲区
                     .option(ChannelOption.SO_BACKLOG, 2048)
                     // 将网络数据积累到一定的数量后,服务器端才发送出去,会造成一定的延迟。希望服务是低延迟的,建议将TCP_NODELAY设置为true
@@ -73,5 +74,29 @@ public class TcpServer {
     public void destroy() {
         bossGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();
+    }
+
+
+    @Resource
+    private AuthHandler authHandler;
+
+    @Resource
+    private MessageHandler messageHandler;
+
+    @Resource
+    private ExceptionHandler exceptionHandler;
+
+    @Resource
+    private TcpServerProperties properties;
+
+    @Override
+    protected void initChannel(SocketChannel socketChannel) {
+        socketChannel.pipeline()
+                .addLast(new IdleStateHandler(properties.getHeartSeconds(), 0, 0, TimeUnit.SECONDS))
+                .addLast(new GBT32960DecoderHandler())
+                .addLast(new GBT32960EncoderHandler())
+                .addLast(authHandler)
+                .addLast(messageHandler)
+                .addLast(exceptionHandler);
     }
 }

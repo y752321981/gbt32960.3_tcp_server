@@ -1,14 +1,13 @@
 package com.camellya.gbt32960_3_tcp_server.handler;
 
-import com.yin.tcpserver.pojo.constant.ProtocolConstants;
-import com.yin.tcpserver.pojo.enums.CommandEnum;
-import com.yin.tcpserver.pojo.enums.DataDecodeEnum;
-import com.yin.tcpserver.pojo.protocol.*;
-import com.yin.tcpserver.service.IChannelService;
-import com.yin.tcpserver.util.AesUtil;
-import com.yin.tcpserver.util.AnswerHandlerUtil;
-import com.yin.tcpserver.util.CommandHandlerUtil;
-import com.yin.tcpserver.util.RsaUtil;
+
+import cn.hutool.core.util.ReflectUtil;
+import com.camellya.gbt32960_3_tcp_server.annotation.Command;
+import com.camellya.gbt32960_3_tcp_server.constant.consist.ProtocolConstants;
+import com.camellya.gbt32960_3_tcp_server.constant.enums.CommandEnum;
+import com.camellya.gbt32960_3_tcp_server.constant.enums.DataDecodeEnum;
+import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
+import com.camellya.gbt32960_3_tcp_server.service.IChannelService;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -18,6 +17,10 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+
 @Slf4j
 @Component
 @ChannelHandler.Sharable
@@ -25,6 +28,56 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
 
     @Resource
     private IChannelService channelService;
+
+    private static final HashMap<CommandEnum, Method> commands;
+
+    private static final HashMap<CommandEnum, Method> answers;
+
+    static {
+        commands = new LinkedHashMap<>();
+        Method[] methods = ReflectUtil.getMethods(CommandHandler.class);
+        for (Method method : methods) {
+            Command annotation = method.getAnnotation(Command.class);
+            if (annotation != null) {
+                commands.put(annotation.value(), method);
+            }
+        }
+
+        answers = new LinkedHashMap<>();
+        methods = ReflectUtil.getMethods(CommandHandler.class);
+        for (Method method : methods) {
+            Command annotation = method.getAnnotation(Command.class);
+            if (annotation != null) {
+                answers.put(annotation.value(), method);
+            }
+        }
+    }
+
+    private void processCommand(CommandEnum commandEnum, ChannelHandlerContext ctx, GBT32960Packet packet) {
+        Method method = commands.get(commandEnum);
+        if (method == null) {
+            log.error("未实现处理方法: {}", commandEnum.getDesc());
+            return;
+        }
+        try {
+            method.invoke(commandEnum, ctx, packet);
+        } catch (Exception e) {
+            log.error("调用指令处理方法失败: {}, {}", commandEnum.getDesc(), e.getMessage());
+        }
+    }
+
+    private void processAnswer(CommandEnum commandEnum, ChannelHandlerContext ctx, GBT32960Packet packet) {
+        Method method = answers.get(commandEnum);
+        if (method == null) {
+            log.error("未实现处理方法: {}", commandEnum.getDesc());
+            return;
+        }
+        try {
+            method.invoke(commandEnum, ctx, packet);
+        } catch (Exception e) {
+            log.error("调用指令处理方法失败: {}, {}", commandEnum.getDesc(), e.getMessage());
+        }
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, GBT32960Packet packet) {
@@ -35,16 +88,21 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
             log.error("无效的加密方式:{},数据:{}", packet.getEncryMode(), packet.getData());
             return;
         }
-        switch (decodeType) {
-            case NONE -> {
-            }
-            case RSA -> packet.setData(RsaUtil.decrypt(packet.getData()));
-            case AES -> packet.setData(AesUtil.decrypt(packet.getData()));
-            case ERROR -> {
-            }
-            case INVALID -> {
-            }
-        }
+        // TODO: 加解密实现
+//        switch (decodeType) {
+//            case NONE -> {
+//            }
+//            case RSA -> {
+//
+//            }
+//            case AES -> {
+//
+//            }
+//            case ERROR -> {
+//            }
+//            case INVALID -> {
+//            }
+//        }
         CommandEnum commandEnum = CommandEnum.getCommandEnum(packet.getCommandFlag());
         if (packet.getAckFlag() == ProtocolConstants.ACK_NOT) {
             if (channelService.isVehicle(channelHandlerContext)) {
@@ -54,10 +112,10 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
             } else {
                 log.info("未登入-clientId:{}, 指令:{}, channelId:{}", packet.getVIN(), commandEnum.getDesc(), channelHandlerContext.channel().id());
             }
-            CommandHandlerUtil.process(commandEnum, channelHandlerContext, packet);
+            processCommand(commandEnum, channelHandlerContext, packet);
         } else {
             log.info("设备响应-vin:{}, 指令:{}, channelId:{}", packet.getVIN(), commandEnum.getDesc(), channelHandlerContext.channel().id());
-            AnswerHandlerUtil.process(commandEnum, channelHandlerContext, packet);
+            processAnswer(commandEnum, channelHandlerContext, packet);
         }
     }
 

@@ -1,8 +1,8 @@
 package com.camellya.gbt32960_3_tcp_server.protocol;
 
 
-import com.camellya.gbt32960_3_tcp_server.enums.AckEnum;
-import com.camellya.gbt32960_3_tcp_server.enums.DataDecodeEnum;
+import com.camellya.gbt32960_3_tcp_server.constant.enums.AckEnum;
+import com.camellya.gbt32960_3_tcp_server.constant.enums.DataDecodeEnum;
 import lombok.Data;
 
 import java.nio.charset.StandardCharsets;

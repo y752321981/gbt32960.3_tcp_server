@@ -19,7 +19,7 @@ public class FastJson2JsonRedisSerializer<T> implements RedisSerializer<T>
 {
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    static final Filter AUTO_TYPE_FILTER = JSONReader.autoTypeFilter("org.springframework", "com.weiqiao");
+    static final Filter AUTO_TYPE_FILTER = JSONReader.autoTypeFilter("org.springframework", "com.camellya");
 
     private final Class<T> clazz;
 
@@ -42,7 +42,7 @@ public class FastJson2JsonRedisSerializer<T> implements RedisSerializer<T>
     @Override
     public T deserialize(byte[] bytes) throws SerializationException
     {
-        if (bytes == null || bytes.length <= 0)
+        if (bytes == null || bytes.length == 0)
         {
             return null;
         }

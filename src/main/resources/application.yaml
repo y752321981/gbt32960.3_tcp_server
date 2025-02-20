@@ -1,3 +1,5 @@
+server:
+  port: 16321
 spring:
   application:
     name: gbt32960.3_tcp_server
@@ -23,3 +25,7 @@ netty:
 
 logging:
   config: classpath:logback.xml
+
+node:
+  name: node1
+  host: 127.0.0.1:16321
