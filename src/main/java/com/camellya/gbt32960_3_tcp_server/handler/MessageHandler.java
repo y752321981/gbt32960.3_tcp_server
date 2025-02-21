@@ -134,8 +134,4 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
             super.userEventTriggered(ctx, evt);
         }
     }
-
-
-
-
 }
