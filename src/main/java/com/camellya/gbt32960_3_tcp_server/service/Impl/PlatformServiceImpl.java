@@ -5,4 +5,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class PlatformServiceImpl implements IPlatformService {
+    @Override
+    public boolean login(String username, String password) {
+        return true;
+    }
 }

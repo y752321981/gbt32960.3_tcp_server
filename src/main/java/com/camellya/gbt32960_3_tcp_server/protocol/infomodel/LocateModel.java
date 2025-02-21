@@ -1,20 +1,19 @@
 package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
-import com.yin.tcpserver.util.ByteConvertUtil;
+import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class LocateModel extends BaseInfoModel {
+public class LocateModel {
 
-    @Override
+    private static final int FIXED_LENGTH = 9;
+
     public int getLength() {
-        return 9;
+        return FIXED_LENGTH;
     }
 
     /**
@@ -76,7 +75,7 @@ public class LocateModel extends BaseInfoModel {
 
     public LocateModel(List<Byte> byteList) {
         this.status = byteList.get(0);
-        this.longitude = ByteConvertUtil.byteArrayToUnsignedInt(byteList.subList(1, 5));
-        this.latitude = ByteConvertUtil.byteArrayToUnsignedInt(byteList.subList(5, 9));
+        this.longitude = ByteUtil.byteArrayToUnsignedInt(byteList.subList(1, 5));
+        this.latitude = ByteUtil.byteArrayToUnsignedInt(byteList.subList(5, 9));
     }
 }

@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 @Getter
-public class LoginModel {
+public class VehicleLoginModel {
 
     private final TimeModel time;
 
@@ -35,7 +35,7 @@ public class LoginModel {
      */
     private List<String> rechargeCodes;
 
-    public LoginModel(List<Byte> bytes) {
+    public VehicleLoginModel(List<Byte> bytes) {
         time = new TimeModel(bytes);
         serialNumber = (char) (((bytes.get(6) & 0xFF) << 8 ) | (bytes.get(7) & 0xFF));
         Byte[] array1 = bytes.subList(8, 28).toArray(Byte[]::new);

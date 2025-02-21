@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.camellya</groupId>
     <artifactId>gbt32960_3_tcp_server</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0-α</version>
     <name>gbt32960.3_tcp_server</name>
     <description>gbt32960.3_tcp_server</description>
 
@@ -19,7 +19,7 @@
         <netty-sockerio.version>1.7.19</netty-sockerio.version>
         <fastjson.version>2.0.43</fastjson.version>
         <hutool.version>5.8.25</hutool.version>
-        <netty.version>4.1.115.Final</netty.version>
+        <netty.version>4.1.118.Final</netty.version>
     </properties>
     <dependencies>
         <dependency>
@@ -78,6 +78,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                            <version>1.18.36</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

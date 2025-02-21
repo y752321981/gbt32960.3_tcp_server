@@ -1,21 +1,20 @@
 package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
-import com.yin.tcpserver.util.ByteConvertUtil;
+import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 /**
  * 整车数据
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class VehicleModel extends BaseInfoModel{
+public class VehicleModel {
 
-    @Override
+    private static final int FIXED_LENGTH = 20;
+
     public int getLength() {
-        return 20;
+        return FIXED_LENGTH;
     }
 
     // 车辆状态，1启动，2熄火，3其他，0xfe异常，0xff无效
@@ -64,15 +63,15 @@ public class VehicleModel extends BaseInfoModel{
         this.vehicleStatus = dataList.get(0);
         this.chargeStatus = dataList.get(1);
         this.runModel = dataList.get(2);
-        this.speed = ByteConvertUtil.byteArrayToChar(dataList.subList(3, 5));
-        this.totalMileage = ByteConvertUtil.byteArrayToUnsignedInt(dataList.subList(5, 9));
-        this.voltage = ByteConvertUtil.byteArrayToChar(dataList.subList(9, 11));
-        this.current = ByteConvertUtil.byteArrayToChar(dataList.subList(11, 13));
+        this.speed = ByteUtil.byteArrayToChar(dataList.subList(3, 5));
+        this.totalMileage = ByteUtil.byteArrayToUnsignedInt(dataList.subList(5, 9));
+        this.voltage = ByteUtil.byteArrayToChar(dataList.subList(9, 11));
+        this.current = ByteUtil.byteArrayToChar(dataList.subList(11, 13));
         this.soc = dataList.get(13);
         this.dcDc = dataList.get(14);
         this.gear = dataList.get(15);
-        this.insulationResistance = ByteConvertUtil.byteArrayToChar(dataList.subList(16, 18));
-        this.reserve = ByteConvertUtil.byteArrayToChar(dataList.subList(18, 20));
+        this.insulationResistance = ByteUtil.byteArrayToChar(dataList.subList(16, 18));
+        this.reserve = ByteUtil.byteArrayToChar(dataList.subList(18, 20));
     }
 
 }

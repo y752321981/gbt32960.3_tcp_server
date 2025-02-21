@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.camellya.gbt32960_3_tcp_server.config.NodeConfig;
 import com.camellya.gbt32960_3_tcp_server.constant.consist.RedisConstants;
 import com.camellya.gbt32960_3_tcp_server.model.entity.NodeInfo;
+import com.camellya.gbt32960_3_tcp_server.service.INodeService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,7 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
-public class NodeServiceImpl {
+public class NodeServiceImpl implements INodeService {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -34,6 +35,12 @@ public class NodeServiceImpl {
     @Scheduled(fixedRate = 10000)
     public void updateNodeInfo() {
         redisTemplate.opsForHash().put(RedisConstants.NODE_INFO, nodeConfig.getName(), JSON.toJSONString(nodeInfo));
+    }
+
+    @Override
+    public void updateAliveCount(Integer vehicle, Integer platform) {
+        nodeInfo.setAliveVehicleCount(vehicle);
+        nodeInfo.setAlivePlatformCount(platform);
     }
 
 }

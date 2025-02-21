@@ -1,7 +1,7 @@
 package com.camellya.gbt32960_3_tcp_server.handler;
 
-import com.yin.tcpserver.service.IAuthService;
-import com.yin.tcpserver.service.IChannelService;
+
+import com.camellya.gbt32960_3_tcp_server.service.IChannelService;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -23,11 +23,8 @@ public class ExceptionHandler extends ChannelInboundHandlerAdapter {
     @Resource
     private IChannelService channelService;
 
-    @Resource
-    private IAuthService vehicleInfoService;
-
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (cause instanceof IOException) {
             log.error("发生了 IOException: {}", cause.getMessage());
         } else if (cause instanceof DecoderException) {
@@ -44,9 +41,6 @@ public class ExceptionHandler extends ChannelInboundHandlerAdapter {
             log.error("发生了 IllegalArgumentException: {}", cause.getMessage());
         } else {
             log.error("发生了未知异常: ", cause);
-        }
-        if (channelService.isVehicle(ctx)) {
-            vehicleInfoService.logout(channelService.getClientId(ctx));
         }
         channelService.closeAndClean(ctx);
     }

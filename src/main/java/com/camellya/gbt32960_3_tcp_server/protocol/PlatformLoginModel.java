@@ -1,6 +1,6 @@
 package com.camellya.gbt32960_3_tcp_server.protocol;
 
-import com.yin.tcpserver.util.ByteConvertUtil;
+import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
 
 import java.util.List;
@@ -24,8 +24,8 @@ public class PlatformLoginModel {
     public PlatformLoginModel(List<Byte> bytes) {
         time = new TimeModel(bytes);
         serialNumber = (char) (((bytes.get(6) & 0xFF) << 8 ) | (bytes.get(7) & 0xFF));
-        username = ByteConvertUtil.byteArrayToString(bytes.subList(8, 20), 12);
-        password = ByteConvertUtil.byteArrayToString(bytes.subList(20, 40), 20);
+        username = ByteUtil.byteArrayToString(bytes.subList(8, 20), 12);
+        password = ByteUtil.byteArrayToString(bytes.subList(20, 40), 20);
         encodeRule = bytes.get(40);
     }
 }

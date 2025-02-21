@@ -1,20 +1,73 @@
 package com.camellya.gbt32960_3_tcp_server.protocol;
 
+import com.camellya.gbt32960_3_tcp_server.constant.enums.InfoReportDataEnum;
+import com.camellya.gbt32960_3_tcp_server.protocol.infomodel.*;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
 import java.util.List;
 
+@Slf4j
 @Getter
 public class InfoModel {
 
     private final TimeModel time;
 
-    private final List<Byte> infoBytes;
+    private VehicleModel vehicle;
+
+    private DriverEngineModel driverEngine;
+
+    private FuelCellModel fuelCell;
+
+    private EngineModel engine;
+
+    private LocateModel locate;
+
+    private ExtremumModel extremum;
+
+    private AlarmModel alarm;
 
     public InfoModel(List<Byte> byteList) {
         time = new TimeModel(byteList);
-        infoBytes = byteList.subList(6, byteList.size());
+        List<Byte> bytes = byteList.subList(6, byteList.size());
+        while (!bytes.isEmpty()) {
+            InfoReportDataEnum infoReportDataEnum = InfoReportDataEnum.getInfoReportDataEnum(byteList.get(0));
+            List<Byte> dataList = byteList.subList(1, byteList.size());
+            int length = 0;
+            switch (infoReportDataEnum) {
+                case VEHICLE -> {
+                    vehicle = new VehicleModel(dataList);
+                    length = vehicle.getLength();
+                }
+                case DRIVER_MOTOR -> {
+                    driverEngine = new DriverEngineModel(dataList);
+                    length = driverEngine.getLength();
+                }
+                case FUEL_CELL -> {
+                    fuelCell = new FuelCellModel(dataList);
+                    length = fuelCell.getLength();
+                }
+                case ENGINE -> {
+                    engine = new EngineModel(dataList);
+                    length = engine.getLength();
+                }
+                case LOCATION -> {
+                    locate = new LocateModel(dataList);
+                    length = locate.getLength();
+                }
+                case EXTREMUM -> {
+                    extremum = new ExtremumModel(dataList);
+                    length = extremum.getLength();
+                }
+                case ALARM -> {
+                    alarm = new AlarmModel(dataList);
+                    length = alarm.getLength();
+                }
+                case UNKNOWN -> log.warn("未知的上报数据:{}", byteList.get(0).intValue());
+            }
+            bytes = byteList.subList(1 + length, byteList.size());
+        }
     }
 
     public Date getTime() {

@@ -4,4 +4,8 @@ public class RedisConstants {
 
     public static final String NODE_INFO = "node:info";
 
+    public static final String VEHICLE_INFO = "vehicle:info";
+
+    public static final String PLATFORM_INFO = "platform:info";
+
 }

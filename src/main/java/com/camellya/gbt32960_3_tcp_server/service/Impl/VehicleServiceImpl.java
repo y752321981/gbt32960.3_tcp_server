@@ -5,4 +5,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class VehicleServiceImpl implements IVehicleService {
+    @Override
+    public boolean login(String vin, String iccid) {
+        return true;
+    }
 }

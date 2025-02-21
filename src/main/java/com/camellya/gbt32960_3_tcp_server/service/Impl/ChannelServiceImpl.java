@@ -2,6 +2,7 @@ package com.camellya.gbt32960_3_tcp_server.service.Impl;
 
 import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
 import com.camellya.gbt32960_3_tcp_server.service.IChannelService;
+import com.camellya.gbt32960_3_tcp_server.service.INodeService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
@@ -9,12 +10,13 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
+@Slf4j
 @Service
 public class ChannelServiceImpl implements IChannelService {
 
@@ -48,10 +50,8 @@ public class ChannelServiceImpl implements IChannelService {
      */
     public final static ChannelGroup CHANNEL_GROUP = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
-    /**
-     * 重入锁
-     */
-    private static final Lock LOCK = new ReentrantLock();
+    @Resource
+    private INodeService nodeService;
 
     @Override
     public void recordChannel(ChannelHandlerContext context, boolean isVehicle) {
@@ -74,6 +74,7 @@ public class ChannelServiceImpl implements IChannelService {
             platformChannelMap.put(clientId, context.channel().id());
         }
         context.channel().attr(IS_AUTHORIZED).set(true);
+        nodeService.updateAliveCount(vehicleChannelMap.size(), platformChannelMap.size());
     }
 
     @Override
@@ -88,12 +89,14 @@ public class ChannelServiceImpl implements IChannelService {
 
     @Override
     public boolean isPlatform(ChannelHandlerContext context) {
-        return false;
+        return !isVehicle(context);
     }
 
     @Override
     public void sendMessage(ChannelHandlerContext context, GBT32960Packet packet) {
-
+        Channel channel = context.channel();
+        channel.writeAndFlush(packet);
+        log.info("给{}发送消息:{}, clientId:{}, channelId:{}", channel.attr(IS_VEHICLE).get() ? "车辆" : "平台", packet, channel.attr(CLIENT_ID).get(), channel.id());
     }
 
     @Override
@@ -115,6 +118,7 @@ public class ChannelServiceImpl implements IChannelService {
             } else {
                 platformChannelMap.remove(channel.attr(CLIENT_ID).get());
             }
+            nodeService.updateAliveCount(vehicleChannelMap.size(), platformChannelMap.size());
         }
         channel.attr(CLIENT_ID).set("");
         channel.attr(IS_AUTHORIZED).set(false);

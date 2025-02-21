@@ -62,7 +62,7 @@ public class AuthHandler extends SimpleChannelInboundHandler<GBT32960Packet> {
                 } else {
                     log.warn("channelId: {}, 车辆端口未登入频道发送非登入指令", channelHandlerContext.channel().id());
                     // 此处可以看实际情况选择是否需要断开连接
-                    // channelService.closeAndClean(channelHandlerContext);
+                     channelService.closeAndClean(channelHandlerContext);
                 }
             } else if (channelService.isPlatform(channelHandlerContext)) {
                 // 平台通道只放行平台登入
@@ -71,14 +71,13 @@ public class AuthHandler extends SimpleChannelInboundHandler<GBT32960Packet> {
                 } else {
                     log.warn("channelId: {}, 平台端口未登入频道发送非登入指令", channelHandlerContext.channel().id());
                     // 此处可以看实际情况选择是否需要断开连接
-                    // channelService.closeAndClean(channelHandlerContext);
+                     channelService.closeAndClean(channelHandlerContext);
                 }
             } else {
                 channelService.closeAndClean(channelHandlerContext);
             }
         }
     }
-
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {

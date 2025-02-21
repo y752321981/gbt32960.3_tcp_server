@@ -1,8 +1,7 @@
 package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
-import com.yin.tcpserver.util.ByteConvertUtil;
+import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,11 +9,9 @@ import java.util.List;
 /**
  * 驱动电机数据
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class DriverEngineModel extends BaseInfoModel{
+public class DriverEngineModel {
 
-    @Override
     public int getLength() {
         return count * EngineData.LENGTH + 1;
     }
@@ -64,11 +61,11 @@ public class DriverEngineModel extends BaseInfoModel{
             engineData.serial = dataList.get(i * EngineData.LENGTH);
             engineData.status = dataList.get(i * EngineData.LENGTH + 1);
             engineData.controlTemperature = dataList.get(i * EngineData.LENGTH + 2);
-            engineData.rotateSpeed = ByteConvertUtil.byteArrayToChar(dataList.subList(i * EngineData.LENGTH + 3, i * EngineData.LENGTH + 5));
-            engineData.torque = ByteConvertUtil.byteArrayToChar(dataList.subList(i * EngineData.LENGTH + 5, i * EngineData.LENGTH + 7));
+            engineData.rotateSpeed = ByteUtil.byteArrayToChar(dataList.subList(i * EngineData.LENGTH + 3, i * EngineData.LENGTH + 5));
+            engineData.torque = ByteUtil.byteArrayToChar(dataList.subList(i * EngineData.LENGTH + 5, i * EngineData.LENGTH + 7));
             engineData.engineTemperature = dataList.get(i * EngineData.LENGTH + 7);
-            engineData.voltage = ByteConvertUtil.byteArrayToChar(dataList.subList(i * EngineData.LENGTH + 8, i * EngineData.LENGTH + 10));
-            engineData.current = ByteConvertUtil.byteArrayToChar(dataList.subList(i * EngineData.LENGTH + 10, i * EngineData.LENGTH + 12));
+            engineData.voltage = ByteUtil.byteArrayToChar(dataList.subList(i * EngineData.LENGTH + 8, i * EngineData.LENGTH + 10));
+            engineData.current = ByteUtil.byteArrayToChar(dataList.subList(i * EngineData.LENGTH + 10, i * EngineData.LENGTH + 12));
             this.dataList.add(engineData);
         }
     }

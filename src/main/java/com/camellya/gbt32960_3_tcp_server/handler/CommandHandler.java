@@ -1,11 +1,19 @@
 package com.camellya.gbt32960_3_tcp_server.handler;
 
-import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.camellya.gbt32960_3_tcp_server.annotation.Command;
+import com.camellya.gbt32960_3_tcp_server.config.NodeConfig;
+import com.camellya.gbt32960_3_tcp_server.constant.consist.RedisConstants;
+import com.camellya.gbt32960_3_tcp_server.constant.enums.AckEnum;
+import com.camellya.gbt32960_3_tcp_server.model.entity.PlatformInfo;
+import com.camellya.gbt32960_3_tcp_server.model.entity.VehicleInfo;
 import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
-import com.camellya.gbt32960_3_tcp_server.protocol.LoginModel;
+import com.camellya.gbt32960_3_tcp_server.protocol.InfoModel;
+import com.camellya.gbt32960_3_tcp_server.protocol.PlatformLoginModel;
+import com.camellya.gbt32960_3_tcp_server.protocol.VehicleLoginModel;
 import com.camellya.gbt32960_3_tcp_server.service.IChannelService;
+import com.camellya.gbt32960_3_tcp_server.service.IPlatformService;
+import com.camellya.gbt32960_3_tcp_server.service.IVehicleService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import jakarta.annotation.Resource;
@@ -13,10 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.net.InetSocketAddress;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static com.camellya.gbt32960_3_tcp_server.constant.enums.CommandEnum.*;
 
@@ -30,139 +36,98 @@ public class CommandHandler {
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Resource
+    private IVehicleService vehicleService;
+
+    @Resource
+    private IPlatformService platformService;
+
+    @Resource
+    private NodeConfig nodeConfig;
+
     @Command(VEHICLE_LOGIN)
-    public void vehicleLogin(ChannelHandlerContext channelHandlerContext, GBT32960Packet packet) {
-        LoginModel loginModel = new LoginModel(packet.getData());
+    public void vehicleLogin(ChannelHandlerContext context, GBT32960Packet packet) {
+        VehicleLoginModel loginModel = new VehicleLoginModel(packet.getData());
         String vin = packet.getVIN();
-        boolean success = authService.vehicleLogin(vin, loginModel.getIccid());
+        String iccid = loginModel.getIccid();
+        boolean success = vehicleService.login(vin, iccid);
         if (success) {
-            if (redisTemplate.opsForHash().hasKey(RedisKeyConstants.VEHICLE_LOGIN, vin)) {
-                Channel channel = channelService.getChannel(vin, true);
-                if (channel != null) {
-                    log.warn("此车辆已登录，关闭此前的连接,vin:{},channelId:{}", vin, channel.id());
-                    channelService.closeAndClean(vin, true);
-                } else {
-                    redisTemplate.opsForHash().delete(RedisKeyConstants.VEHICLE_LOGIN, vin);
-                }
-            }
-            channelService.vehicleLogin(channelHandlerContext, vin);
-            channelService.sendMessage(channelHandlerContext, packet.makeResponse(AckEnum.SUCCESS));
-            LoginInfo loginInfo = new LoginInfo();
-            loginInfo.setLoginTime(new Date());
-            loginInfo.setIp(channelHandlerContext.channel().remoteAddress().toString());
-            loginInfo.setVin(packet.getVIN());
-            redisTemplate.opsForHash().put(RedisKeyConstants.VEHICLE_LOGIN, vin, JSONObject.toJSONString(loginInfo));
+            VehicleInfo vehicleInfo = new VehicleInfo();
+            vehicleInfo.setVin(vin);
+            Channel channel = context.channel();
+            String channelId = channel.id().asShortText();
+            InetSocketAddress inetSocketAddress = (InetSocketAddress) channel.remoteAddress();
+            vehicleInfo.setIp(inetSocketAddress.toString());
+            vehicleInfo.setChannelId(channelId);
+            vehicleInfo.setNodeName(nodeConfig.getName());
+            vehicleInfo.setIsVehicle(channelService.isVehicle(context));
+            vehicleInfo.setLastHeartbeatTime(new Date());
+            vehicleInfo.setLoginTime(new Date());
+            redisTemplate.opsForHash().put(RedisConstants.VEHICLE_INFO, channelId, JSONObject.toJSONString(vehicleInfo));
         } else {
-            channelService.sendMessage(channelHandlerContext, packet.makeResponse(AckEnum.FAIL));
-            channelService.closeAndClean(channelHandlerContext);
+            channelService.sendMessage(context, packet.makeResponse(AckEnum.FAIL));
+            channelService.closeAndClean(context);
         }
-    }
-    private Map<InfoReportDataEnum, BaseInfoModel> decodeReportData(List<Byte> byteList) {
-        Map<InfoReportDataEnum, BaseInfoModel> map = new HashMap<>();
-        if (CollectionUtil.isEmpty(byteList)) {
-            return map;
-        }
-        int length = byteList.size();
-        InfoReportDataEnum infoReportDataEnum = InfoReportDataEnum.getInfoReportDataEnum(byteList.get(0));
-        BaseInfoModel baseInfoModel = BaseInfoModel.makeInfoModel(infoReportDataEnum, byteList.subList(1, byteList.size()));
-        map.put(infoReportDataEnum, baseInfoModel);
-        if (baseInfoModel.getLength() == 0) {
-            return map;
-        }
-        if (length - baseInfoModel.getLength() <= 1) {
-            return map;
-        }
-        if (1 + baseInfoModel.getLength() >= length - baseInfoModel.getLength() - 1) {
-            return map;
-        }
-        Map<InfoReportDataEnum, BaseInfoModel> infoReportDataEnumBaseInfoModelMap = decodeReportData(byteList.subList(1 + baseInfoModel.getLength(), length - baseInfoModel.getLength() - 1));
-        map.putAll(infoReportDataEnumBaseInfoModelMap);
-        return map;
-    }
-
-    private void reportInfo(String vin, InfoModel infoModel) {
-        Map<InfoReportDataEnum, BaseInfoModel> maps = decodeReportData(infoModel.getInfoBytes());
-        VehicleRuntimeInfo info = null;
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(RedisKeyConstants.VEHICLE_RUNTIME_KEY)) && redisTemplate.opsForHash().hasKey(RedisKeyConstants.VEHICLE_RUNTIME_KEY, vin)) {
-            info = JSONObject.parseObject((String)redisTemplate.opsForHash().get(RedisKeyConstants.VEHICLE_RUNTIME_KEY, vin), VehicleRuntimeInfo.class);
-        }
-        if (info == null) {
-            info = new VehicleRuntimeInfo();
-        }
-        for (Map.Entry<InfoReportDataEnum, BaseInfoModel> entry : maps.entrySet()) {
-            switch (entry.getKey()) {
-                case VEHICLE -> {
-                    VehicleModel value = (VehicleModel) entry.getValue();
-                    info.setVehicleStatus(value.getVehicleStatus().toString());
-                    info.setChargeStatus(value.getChargeStatus().toString());
-                    info.setRunMode(value.getRunModel().toString());
-                    info.setSpeed(value.getSpeed() / 10.0F);
-                    info.setTotalMileage(value.getTotalMileage());
-                    info.setVoltage(value.getVoltage() / 10.0F);
-                    info.setCurrent(value.getCurrent() / 10.0F);
-                    info.setSoc(value.getSoc().intValue());
-                    info.setDcDcStatus(value.getDcDc().toString());
-                    info.setGear(value.getGear().toString());
-                    info.setInsulationResistance(Integer.valueOf(value.getInsulationResistance()));
-                }
-                case DRIVER_MOTOR -> {
-                }
-                case FUEL_CELL -> {
-                }
-                case ENGINE -> {
-                }
-                case LOCATION -> {
-                    LocateModel value = (LocateModel) entry.getValue();
-                    if (!value.getValid()) {
-                        break;
-                    }
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("lat", value.getLatitude());
-                    map.put("lon", value.getLongitude());
-                    info.setLat(value.getLatitude());
-                    info.setLon(value.getLongitude());
-                    info.setLocationTime(infoModel.getTime());
-                }
-                case EXTREMUM -> {
-                }
-                case ALARM -> {
-                }
-                case UNKNOWN -> {
-                }
-            }
-        }
-    }
-
-    @Command(REPORT_INFO_REAL)
-    public void reportRealtime(ChannelHandlerContext channelHandlerContext, GBT32960Packet packet) {
-        InfoModel infoModel = new InfoModel(packet.getData());
-        String vin = packet.getVIN();
-
-    }
-
-    @Command(REPORT_INFO_RESEND)
-    public void reportResend(ChannelHandlerContext channelHandlerContext, GBT32960Packet packet) {
-
     }
 
     @Command(VEHICLE_LOGOUT)
-    public void vehicleLogout(ChannelHandlerContext channelHandlerContext, GBT32960Packet packet) {
-
+    public void vehicleLogout(ChannelHandlerContext context, GBT32960Packet packet) {
+        redisTemplate.opsForHash().delete(RedisConstants.VEHICLE_INFO, context.channel().id().asShortText());
+        channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
+        channelService.closeAndClean(context);
     }
 
     @Command(PLATFORM_LOGIN)
-    public void platformLogin(ChannelHandlerContext channelHandlerContext, GBT32960Packet packet) {
-
+    public void platformLogin(ChannelHandlerContext context, GBT32960Packet packet) {
+        if (!channelService.isPlatform(context)) {
+            log.warn("车辆端口禁止平台登入");
+            channelService.sendMessage(context, packet.makeResponse(AckEnum.FAIL));
+            channelService.closeAndClean(context);
+            return;
+        }
+        PlatformLoginModel loginModel = new PlatformLoginModel(packet.getData());
+        boolean success = platformService.login(loginModel.getUsername(), loginModel.getPassword());
+        if (success) {
+            PlatformInfo platformInfo = new PlatformInfo();
+            platformInfo.setUsername(loginModel.getUsername());
+            Channel channel = context.channel();
+            String channelId = channel.id().asShortText();
+            InetSocketAddress inetSocketAddress = (InetSocketAddress) channel.remoteAddress();
+            platformInfo.setChannelId(channelId);
+            platformInfo.setIp(inetSocketAddress.toString());
+            platformInfo.setLastHeartbeatTime(new Date());
+            platformInfo.setLoginTime(new Date());
+            redisTemplate.opsForHash().put(RedisConstants.PLATFORM_INFO, channelId, JSONObject.toJSONString(platformInfo));
+        } else {
+            channelService.sendMessage(context, packet.makeResponse(AckEnum.FAIL));
+            channelService.closeAndClean(context);
+        }
     }
 
     @Command(PLATFORM_LOGOUT)
-    public void platformLogout(ChannelHandlerContext channelHandlerContext, GBT32960Packet packet) {
+    public void platformLogout(ChannelHandlerContext context, GBT32960Packet packet) {
+        redisTemplate.opsForHash().delete(RedisConstants.PLATFORM_INFO, context.channel().id().asShortText());
+        channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
+        channelService.closeAndClean(context);
+    }
 
+    @Command(REPORT_INFO_REAL)
+    public void reportRealtime(ChannelHandlerContext context, GBT32960Packet packet) {
+        InfoModel infoModel = new InfoModel(packet.getData());
+        String vin = packet.getVIN();
+        log.warn("上报消息, vin: {}, 是否车辆端口: {}, 数据: {}", vin, channelService.isVehicle(context), infoModel);
+    }
+
+    @Command(REPORT_INFO_RESEND)
+    public void reportResend(ChannelHandlerContext context, GBT32960Packet packet) {
+        InfoModel infoModel = new InfoModel(packet.getData());
+        String vin = packet.getVIN();
+        log.warn("重发消息, vin: {}, channelId: {}, 是否车辆端口: {}, 数据: {}", vin, context.channel().id(), channelService.isVehicle(context), infoModel);
     }
 
     @Command(UNKNOWN)
-    public void unknownCommand(ChannelHandlerContext channelHandlerContext, GBT32960Packet packet) {
-
+    public void unknownCommand(ChannelHandlerContext context, GBT32960Packet packet) {
+        log.warn("未知指令, vin: {}", packet.getVIN());
     }
 
 }

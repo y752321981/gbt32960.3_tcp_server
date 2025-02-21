@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.concurrent.Executor;
 
 @Slf4j
 @Component
@@ -32,6 +33,9 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
     private static final HashMap<CommandEnum, Method> commands;
 
     private static final HashMap<CommandEnum, Method> answers;
+
+    @Resource
+    private Executor executor;
 
     static {
         commands = new LinkedHashMap<>();
@@ -60,7 +64,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
             return;
         }
         try {
-            method.invoke(commandEnum, ctx, packet);
+            method.invoke(ctx, packet);
         } catch (Exception e) {
             log.error("调用指令处理方法失败: {}, {}", commandEnum.getDesc(), e.getMessage());
         }
@@ -73,7 +77,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
             return;
         }
         try {
-            method.invoke(commandEnum, ctx, packet);
+            method.invoke(ctx, packet);
         } catch (Exception e) {
             log.error("调用指令处理方法失败: {}, {}", commandEnum.getDesc(), e.getMessage());
         }
@@ -112,10 +116,10 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
             } else {
                 log.info("未登入-clientId:{}, 指令:{}, channelId:{}", packet.getVIN(), commandEnum.getDesc(), channelHandlerContext.channel().id());
             }
-            processCommand(commandEnum, channelHandlerContext, packet);
+            executor.execute(() -> processCommand(commandEnum, channelHandlerContext, packet));
         } else {
             log.info("设备响应-vin:{}, 指令:{}, channelId:{}", packet.getVIN(), commandEnum.getDesc(), channelHandlerContext.channel().id());
-            processAnswer(commandEnum, channelHandlerContext, packet);
+            executor.execute(() -> processAnswer(commandEnum, channelHandlerContext, packet));
         }
     }
 

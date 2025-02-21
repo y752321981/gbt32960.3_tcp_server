@@ -1,6 +1,6 @@
 package com.camellya.gbt32960_3_tcp_server.constant.enums;
 
-import com.yin.tcpserver.pojo.protocol.infomodel.*;
+import com.camellya.gbt32960_3_tcp_server.protocol.infomodel.*;
 import lombok.Getter;
 
 @Getter
@@ -11,8 +11,8 @@ public enum InfoReportDataEnum {
     ENGINE(4, "发动机数据", EngineModel.class),
     LOCATION(5, "车辆位置数据", LocateModel.class),
     EXTREMUM(6, "极值数据", ExtremumModel.class),
-    ALARM(7, "报警数据", BaseInfoModel.class),
-    UNKNOWN(99, "未知数据", BaseInfoModel.class),
+    ALARM(7, "报警数据", AlarmModel.class),
+    UNKNOWN(99, "未知数据", Object.class),
     ;
     private final Byte code;
 

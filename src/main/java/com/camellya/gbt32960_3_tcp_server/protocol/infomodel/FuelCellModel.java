@@ -1,8 +1,7 @@
 package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
-import com.yin.tcpserver.util.ByteConvertUtil;
+import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,13 +9,14 @@ import java.util.List;
 /**
  * 燃料电池
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class FuelCellModel extends BaseInfoModel{
+public class FuelCellModel {
 
-    @Override
+    private static final int FIXED_LENGTH = 17;
+
+
     public int getLength() {
-        return 17 + probeCount;
+        return FIXED_LENGTH + probeCount;
     }
 
     // 电压，（单位0.1V），0xfffe异常，0xffff无效
@@ -56,19 +56,19 @@ public class FuelCellModel extends BaseInfoModel{
     private Byte dcDcStatus;
 
     public FuelCellModel(List<Byte> dataList) {
-        this.voltage = ByteConvertUtil.byteArrayToChar(dataList.subList(0, 2));
-        this.current = ByteConvertUtil.byteArrayToChar(dataList.subList(2, 4));
-        this.consumption = ByteConvertUtil.byteArrayToChar(dataList.subList(4, 6));
-        this.probeCount = ByteConvertUtil.byteArrayToChar(dataList.subList(6, 8));
+        this.voltage = ByteUtil.byteArrayToChar(dataList.subList(0, 2));
+        this.current = ByteUtil.byteArrayToChar(dataList.subList(2, 4));
+        this.consumption = ByteUtil.byteArrayToChar(dataList.subList(4, 6));
+        this.probeCount = ByteUtil.byteArrayToChar(dataList.subList(6, 8));
         this.probeTemperatures = new ArrayList<>(this.probeCount);
         for (int i = 0; i < probeCount; i++) {
             this.probeTemperatures.set(i, dataList.get(i + 8));
         }
-        this.hSystemHighestTemperature = ByteConvertUtil.byteArrayToChar(dataList.subList(this.probeCount + 8, this.probeCount + 10));
+        this.hSystemHighestTemperature = ByteUtil.byteArrayToChar(dataList.subList(this.probeCount + 8, this.probeCount + 10));
         this.hSystemHighestTemperatureIndex = dataList.get(this.probeCount + 10);
-        this.hHighestConcentration = ByteConvertUtil.byteArrayToChar(dataList.subList(this.probeCount + 11, this.probeCount + 13));
+        this.hHighestConcentration = ByteUtil.byteArrayToChar(dataList.subList(this.probeCount + 11, this.probeCount + 13));
         this.hHighestConcentrationIndex = dataList.get(this.probeCount + 13);
-        this.hHighestPressure = ByteConvertUtil.byteArrayToChar(dataList.subList(this.probeCount + 14, this.probeCount + 16));
+        this.hHighestPressure = ByteUtil.byteArrayToChar(dataList.subList(this.probeCount + 14, this.probeCount + 16));
         this.hHighestPressureIndex = dataList.get(this.probeCount + 16);
         this.dcDcStatus = dataList.get(this.probeCount + 17);
     }
