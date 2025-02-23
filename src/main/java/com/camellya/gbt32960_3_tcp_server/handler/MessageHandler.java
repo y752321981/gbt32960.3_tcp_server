@@ -4,6 +4,7 @@ package com.camellya.gbt32960_3_tcp_server.handler;
 import cn.hutool.core.util.ReflectUtil;
 import com.camellya.gbt32960_3_tcp_server.annotation.Command;
 import com.camellya.gbt32960_3_tcp_server.constant.consist.ProtocolConstants;
+import com.camellya.gbt32960_3_tcp_server.constant.consist.RedisConstants;
 import com.camellya.gbt32960_3_tcp_server.constant.enums.CommandEnum;
 import com.camellya.gbt32960_3_tcp_server.constant.enums.DataDecodeEnum;
 import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
@@ -13,8 +14,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -30,16 +33,26 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
     @Resource
     private IChannelService channelService;
 
-    private static final HashMap<CommandEnum, Method> commands;
+    private HashMap<CommandEnum, Method> commands;
 
-    private static final HashMap<CommandEnum, Method> answers;
+    private HashMap<CommandEnum, Method> answers;
+
+    @Resource
+    private CommandHandler commandHandler;
+
+    @Resource
+    private AuthHandler authHandler;
 
     @Resource
     private Executor executor;
 
-    static {
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @PostConstruct
+    public void initFuction() {
         commands = new LinkedHashMap<>();
-        Method[] methods = ReflectUtil.getMethods(CommandHandler.class);
+        Method[] methods = ReflectUtil.getMethods(commandHandler.getClass());
         for (Method method : methods) {
             Command annotation = method.getAnnotation(Command.class);
             if (annotation != null) {
@@ -48,7 +61,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
         }
 
         answers = new LinkedHashMap<>();
-        methods = ReflectUtil.getMethods(CommandHandler.class);
+        methods = ReflectUtil.getMethods(authHandler.getClass());
         for (Method method : methods) {
             Command annotation = method.getAnnotation(Command.class);
             if (annotation != null) {
@@ -64,7 +77,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
             return;
         }
         try {
-            method.invoke(ctx, packet);
+            method.invoke(commandHandler, ctx, packet);
         } catch (Exception e) {
             log.error("调用指令处理方法失败: {}, {}", commandEnum.getDesc(), e.getMessage());
         }
@@ -77,7 +90,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
             return;
         }
         try {
-            method.invoke(ctx, packet);
+            method.invoke(answers, ctx, packet);
         } catch (Exception e) {
             log.error("调用指令处理方法失败: {}, {}", commandEnum.getDesc(), e.getMessage());
         }
@@ -128,6 +141,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<GBT32960Packet> 
         if (evt instanceof IdleStateEvent event) {
             if (event.state() == IdleState.READER_IDLE) {
                 log.info("心跳检测超时，断开连接: channelId: {}, clientId: {}", ctx.channel().id(), channelService.getClientId(ctx));
+                redisTemplate.delete(RedisConstants.VEHICLE_INFO + ":" + ctx.channel().id());
                 channelService.closeAndClean(ctx);
             }
         } else {

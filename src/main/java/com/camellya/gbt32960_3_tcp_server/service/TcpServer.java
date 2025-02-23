@@ -62,7 +62,7 @@ public class TcpServer extends ChannelInitializer<SocketChannel>  {
                     // 设置 TCP 发送缓冲区大小（单位：字节）
                     .childOption(ChannelOption.SO_SNDBUF, serverProperties.getPlatformCacheSize()) // 设置为 50 MB;
                     .bind().sync();
-            log.info("tcpServer车辆服务启动成功！开始监听端口：{}, 缓存区大小: {}", serverProperties.getPlatformPort(), serverProperties.getPlatformCacheSize());
+            log.info("tcpServer平台服务启动成功！开始监听端口：{}, 缓存区大小: {}", serverProperties.getPlatformPort(), serverProperties.getPlatformCacheSize());
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             bossGroup.shutdownGracefully();
@@ -89,12 +89,18 @@ public class TcpServer extends ChannelInitializer<SocketChannel>  {
     @Resource
     private TcpServerProperties properties;
 
+    @Resource
+    private GBT32960DecoderHandler decoderHandler;
+
+    @Resource
+    private GBT32960EncoderHandler encoderHandler;
+
     @Override
     protected void initChannel(SocketChannel socketChannel) {
         socketChannel.pipeline()
                 .addLast(new IdleStateHandler(properties.getHeartSeconds(), 0, 0, TimeUnit.SECONDS))
-                .addLast(new GBT32960DecoderHandler())
-                .addLast(new GBT32960EncoderHandler())
+                .addLast(decoderHandler)
+                .addLast(encoderHandler)
                 .addLast(authHandler)
                 .addLast(messageHandler)
                 .addLast(exceptionHandler);

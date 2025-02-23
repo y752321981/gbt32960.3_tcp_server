@@ -59,6 +59,7 @@ public class ChannelServiceImpl implements IChannelService {
         if (channel != null) {
             CHANNEL_GROUP.remove(channel);
         }
+        channel = context.channel();
         context.channel().attr(CLIENT_ID).set(context.channel().id().toString());
         context.channel().attr(IS_VEHICLE).set(isVehicle);
         context.channel().attr(IS_AUTHORIZED).set(false);

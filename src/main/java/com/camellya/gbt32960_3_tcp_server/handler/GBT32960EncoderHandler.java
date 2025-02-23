@@ -6,10 +6,12 @@ import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+@Component
 public class GBT32960EncoderHandler extends MessageToByteEncoder<GBT32960Packet> {
 
     @Override

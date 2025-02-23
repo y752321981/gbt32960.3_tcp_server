@@ -63,7 +63,10 @@ public class CommandHandler {
             vehicleInfo.setIsVehicle(channelService.isVehicle(context));
             vehicleInfo.setLastHeartbeatTime(new Date());
             vehicleInfo.setLoginTime(new Date());
-            redisTemplate.opsForHash().put(RedisConstants.VEHICLE_INFO, channelId, JSONObject.toJSONString(vehicleInfo));
+            String key = RedisConstants.VEHICLE_INFO + ":" + channelId;
+            redisTemplate.opsForValue().set(key, JSONObject.toJSONString(vehicleInfo));
+            // 如果启用了特定的心跳指令，可以设置为过期
+            // redisTemplate.expire(key, properties.getHeartSeconds(), TimeUnit.SECONDS);
         } else {
             channelService.sendMessage(context, packet.makeResponse(AckEnum.FAIL));
             channelService.closeAndClean(context);
