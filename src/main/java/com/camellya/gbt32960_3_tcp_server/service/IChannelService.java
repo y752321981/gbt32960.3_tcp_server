@@ -48,12 +48,16 @@ public interface IChannelService {
     void sendMessage(ChannelHandlerContext context, GBT32960Packet packet);
 
     /**
-     * 获取
-     * @param context
-     * @return
+     * 获取用户id
+     * @param context context
+     * @return 结果
      */
     String getClientId(ChannelHandlerContext context);
 
     void closeAndClean(ChannelHandlerContext context);
+
+    static String getChannelIdString(ChannelHandlerContext context) {
+        return context.channel().id().asShortText();
+    }
 
 }

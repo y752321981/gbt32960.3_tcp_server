@@ -3,6 +3,7 @@ package com.camellya.gbt32960_3_tcp_server.handler;
 import com.alibaba.fastjson2.JSONObject;
 import com.camellya.gbt32960_3_tcp_server.annotation.Command;
 import com.camellya.gbt32960_3_tcp_server.config.NodeConfig;
+import com.camellya.gbt32960_3_tcp_server.config.TcpServerProperties;
 import com.camellya.gbt32960_3_tcp_server.constant.consist.RedisConstants;
 import com.camellya.gbt32960_3_tcp_server.constant.enums.AckEnum;
 import com.camellya.gbt32960_3_tcp_server.model.entity.PlatformInfo;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import static com.camellya.gbt32960_3_tcp_server.constant.enums.CommandEnum.*;
 
@@ -45,6 +47,9 @@ public class CommandHandler {
     @Resource
     private NodeConfig nodeConfig;
 
+    @Resource
+    private TcpServerProperties properties;
+
     @Command(VEHICLE_LOGIN)
     public void vehicleLogin(ChannelHandlerContext context, GBT32960Packet packet) {
         VehicleLoginModel loginModel = new VehicleLoginModel(packet.getData());
@@ -55,7 +60,7 @@ public class CommandHandler {
             VehicleInfo vehicleInfo = new VehicleInfo();
             vehicleInfo.setVin(vin);
             Channel channel = context.channel();
-            String channelId = channel.id().asShortText();
+            String channelId = IChannelService.getChannelIdString(context);
             InetSocketAddress inetSocketAddress = (InetSocketAddress) channel.remoteAddress();
             vehicleInfo.setIp(inetSocketAddress.toString());
             vehicleInfo.setChannelId(channelId);
@@ -65,8 +70,7 @@ public class CommandHandler {
             vehicleInfo.setLoginTime(new Date());
             String key = RedisConstants.VEHICLE_INFO + ":" + channelId;
             redisTemplate.opsForValue().set(key, JSONObject.toJSONString(vehicleInfo));
-            // 如果启用了特定的心跳指令，可以设置为过期
-            // redisTemplate.expire(key, properties.getHeartSeconds(), TimeUnit.SECONDS);
+            redisTemplate.expire(key, properties.getHeartSeconds(), TimeUnit.SECONDS);
         } else {
             channelService.sendMessage(context, packet.makeResponse(AckEnum.FAIL));
             channelService.closeAndClean(context);
@@ -101,6 +105,7 @@ public class CommandHandler {
             platformInfo.setLastHeartbeatTime(new Date());
             platformInfo.setLoginTime(new Date());
             redisTemplate.opsForHash().put(RedisConstants.PLATFORM_INFO, channelId, JSONObject.toJSONString(platformInfo));
+            channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
         } else {
             channelService.sendMessage(context, packet.makeResponse(AckEnum.FAIL));
             channelService.closeAndClean(context);
@@ -119,6 +124,7 @@ public class CommandHandler {
         InfoModel infoModel = new InfoModel(packet.getData());
         String vin = packet.getVIN();
         log.warn("上报消息, vin: {}, 是否车辆端口: {}, 数据: {}", vin, channelService.isVehicle(context), infoModel);
+        channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
     }
 
     @Command(REPORT_INFO_RESEND)
@@ -126,6 +132,18 @@ public class CommandHandler {
         InfoModel infoModel = new InfoModel(packet.getData());
         String vin = packet.getVIN();
         log.warn("重发消息, vin: {}, channelId: {}, 是否车辆端口: {}, 数据: {}", vin, context.channel().id(), channelService.isVehicle(context), infoModel);
+    }
+
+    @Command(HEARTBEAT)
+    public void heartbeat(ChannelHandlerContext context, GBT32960Packet packet) {
+        String key = RedisConstants.VEHICLE_INFO + ":" + IChannelService.getChannelIdString(context);
+        redisTemplate.expire(key, properties.getHeartSeconds(), TimeUnit.SECONDS);
+        channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
+    }
+
+    @Command(TERMINAL_TIMING)
+    public void terminalTiming(ChannelHandlerContext context, GBT32960Packet packet) {
+        channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
     }
 
     @Command(UNKNOWN)
