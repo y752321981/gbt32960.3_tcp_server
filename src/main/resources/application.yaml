@@ -17,6 +17,9 @@ spring:
       database: 7
       # 密码
       password: 1qaz0OKM
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
