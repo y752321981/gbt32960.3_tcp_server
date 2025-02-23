@@ -7,7 +7,6 @@ import lombok.Data;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 
 @Data
 public class GBT32960Packet {
@@ -16,7 +15,6 @@ public class GBT32960Packet {
      * 最小长度，即数据单元长度为0时
      */
     public final static int MIN_LENGTH = 25;
-
 
     /**
      * 命令标识
@@ -31,12 +29,12 @@ public class GBT32960Packet {
     /**
      * vin号
      */
-    private String VIN;
+    private String vin;
 
     /**
      * 加密方式
      */
-    private Byte encryMode;
+    private Byte encryptMode;
 
     /**
      * 数据单元长度
@@ -56,7 +54,7 @@ public class GBT32960Packet {
     @Override
     public String toString() {
         return  "commandFlag=" + Integer.toHexString(commandFlag) + ",ackFlag=" + Integer.toHexString(ackFlag) +
-                ",VIN=" + VIN + ",encryMode=" + Integer.toHexString(encryMode)+ ",dataLength=" + Integer.valueOf(dataLength) +
+                ",VIN=" + vin + ",encryMode=" + Integer.toHexString(encryptMode)+ ",dataLength=" + Integer.valueOf(dataLength) +
                 ",data=" + data.stream().map(Integer::toHexString).toList() + ",verify=" + Integer.toHexString(verify);
     }
 
@@ -65,7 +63,7 @@ public class GBT32960Packet {
         List<Byte> now = TimeModel.getNow();
         this.data = now;
         this.dataLength = (char) now.size();
-        this.encryMode = DataDecodeEnum.NONE.getCode();
+        this.encryptMode = DataDecodeEnum.NONE.getCode();
         this.verify = this.calcVerifyCode();
         return this;
     }
@@ -73,11 +71,11 @@ public class GBT32960Packet {
     public Byte calcVerifyCode() {
         Byte verifyCode = this.commandFlag;
         verifyCode = (byte) (verifyCode ^ this.ackFlag);
-        byte[] bytes = VIN.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = vin.getBytes(StandardCharsets.UTF_8);
         for (byte aByte : bytes) {
             verifyCode = (byte) (verifyCode ^ aByte);
         }
-        verifyCode = (byte) (verifyCode ^ this.encryMode);
+        verifyCode = (byte) (verifyCode ^ this.encryptMode);
         verifyCode = (byte) (verifyCode ^ ((this.dataLength >> 8) & 0xFF));
         verifyCode = (byte) (verifyCode ^ (this.dataLength & 0xFF));
         for (byte aByte : this.data) {
@@ -86,8 +84,23 @@ public class GBT32960Packet {
         return verifyCode;
     }
 
-    public boolean isAckSuccess() {
-        return Objects.equals(this.ackFlag, AckEnum.SUCCESS.getCode());
+    public Byte[] toProtocolBytes() {
+        Byte[] bytes = new Byte[this.data.size() + MIN_LENGTH];
+        bytes[0] = '#';
+        bytes[1] = '#';
+        bytes[2] = commandFlag;
+        bytes[3] = ackFlag;
+        for (int i = 4; i < 21; i++) {
+            bytes[i] = (byte) vin.charAt(i - 4);
+        }
+        bytes[21] = encryptMode;
+        bytes[22] = (byte) (dataLength >> 8);
+        bytes[23] = (byte) (dataLength & 0xFF);
+        for (int i = 0; i < dataLength; i++) {
+            bytes[24 + i] = (byte) (0xFF & data.get(i));
+        }
+        bytes[24 + dataLength] = verify;
+        return bytes;
     }
 
 }

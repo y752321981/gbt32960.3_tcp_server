@@ -5,6 +5,8 @@ import com.camellya.gbt32960_3_tcp_server.config.TcpServerProperties;
 import com.camellya.gbt32960_3_tcp_server.constant.enums.CommandEnum;
 import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
 import com.camellya.gbt32960_3_tcp_server.service.IChannelService;
+import com.camellya.gbt32960_3_tcp_server.service.IPlatformService;
+import com.camellya.gbt32960_3_tcp_server.service.IVehicleService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -25,6 +27,12 @@ public class AuthHandler extends SimpleChannelInboundHandler<GBT32960Packet> {
 
     @Resource
     private TcpServerProperties tcpServerProperties;
+
+    @Resource
+    private IVehicleService vehicleService;
+
+    @Resource
+    private IPlatformService platformService;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -82,6 +90,13 @@ public class AuthHandler extends SimpleChannelInboundHandler<GBT32960Packet> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.info("连接断开， channelId:{}", ctx.channel().id());
+        if (channelService.isAuthorized(ctx)) {
+            if (channelService.isVehicle(ctx)) {
+                vehicleService.deleteCache(ctx);
+            } else {
+                platformService.deleteCache(ctx);
+            }
+        }
         // TODO: 连接断开时的操作
         channelService.closeAndClean(ctx);
         super.channelInactive(ctx);

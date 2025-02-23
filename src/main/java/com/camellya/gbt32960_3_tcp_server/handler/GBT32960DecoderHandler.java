@@ -1,28 +1,20 @@
 package com.camellya.gbt32960_3_tcp_server.handler;
 
 import com.camellya.gbt32960_3_tcp_server.constant.consist.ProtocolConstants;
-import com.camellya.gbt32960_3_tcp_server.model.entity.OriginRecord;
 import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
-import com.camellya.gbt32960_3_tcp_server.service.IOriginRecordService;
 import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
 @Slf4j
-@Component
 public class GBT32960DecoderHandler extends ByteToMessageDecoder {
 
-    @Resource
-    private IOriginRecordService originRecordService;
 
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf in, List<Object> out) {
@@ -48,14 +40,14 @@ public class GBT32960DecoderHandler extends ByteToMessageDecoder {
                 // 读取VIN号 (假设是17个字节)
                 byte[] vinBytes = new byte[17];
                 in.readBytes(vinBytes);
-                message.setVIN(new String(vinBytes));
+                message.setVin(new String(vinBytes));
                 for (byte vinByte : vinBytes) {
                     list.add(vinByte);
                 }
                 // 读取加密方式
                 byte encryptMode = in.readByte();
-                message.setEncryMode(encryptMode);
-                list.add(message.getEncryMode());
+                message.setEncryptMode(encryptMode);
+                list.add(message.getEncryptMode());
                 // 读取数据单元长度
                 char dataLength = in.readChar();
                 list.add((byte) (dataLength >> 8));
@@ -91,10 +83,6 @@ public class GBT32960DecoderHandler extends ByteToMessageDecoder {
                     // TODO: continue;
                 }
 
-                originRecordService.save(OriginRecord.builder()
-                        .vin(message.getVIN())
-                        .origin(list.toArray(new Byte[0]))
-                        .time(new Date()).build());
                 // 将解析后的对象添加到输出列表
                 out.add(message);
             } else {

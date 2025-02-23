@@ -6,12 +6,10 @@ import com.camellya.gbt32960_3_tcp_server.protocol.GBT32960Packet;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-@Component
 public class GBT32960EncoderHandler extends MessageToByteEncoder<GBT32960Packet> {
 
     @Override
@@ -26,10 +24,10 @@ public class GBT32960EncoderHandler extends MessageToByteEncoder<GBT32960Packet>
         out.writeByte(msg.getAckFlag());
 
         // 写入VIN号
-        out.writeBytes(msg.getVIN().getBytes(StandardCharsets.UTF_8));
+        out.writeBytes(msg.getVin().getBytes(StandardCharsets.UTF_8));
 
         // 写入加密方式
-        out.writeByte(msg.getEncryMode());
+        out.writeByte(msg.getEncryptMode());
 
         // 写入数据单元长度
         out.writeChar(msg.getDataLength());

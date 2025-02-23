@@ -89,18 +89,12 @@ public class TcpServer extends ChannelInitializer<SocketChannel>  {
     @Resource
     private TcpServerProperties properties;
 
-    @Resource
-    private GBT32960DecoderHandler decoderHandler;
-
-    @Resource
-    private GBT32960EncoderHandler encoderHandler;
-
     @Override
     protected void initChannel(SocketChannel socketChannel) {
         socketChannel.pipeline()
                 .addLast(new IdleStateHandler(properties.getHeartSeconds(), 0, 0, TimeUnit.SECONDS))
-                .addLast(decoderHandler)
-                .addLast(encoderHandler)
+                .addLast(new GBT32960DecoderHandler())
+                .addLast(new GBT32960EncoderHandler())
                 .addLast(authHandler)
                 .addLast(messageHandler)
                 .addLast(exceptionHandler);
