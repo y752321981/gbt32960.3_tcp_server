@@ -35,8 +35,6 @@ public class CommandHandler {
     @Resource
     private IChannelService channelService;
 
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
 
     @Resource
     private IVehicleService vehicleService;
@@ -47,8 +45,6 @@ public class CommandHandler {
     @Resource
     private NodeConfig nodeConfig;
 
-    @Resource
-    private TcpServerProperties properties;
 
     @Command(VEHICLE_LOGIN)
     public void vehicleLogin(ChannelHandlerContext context, GBT32960Packet packet) {
@@ -68,9 +64,8 @@ public class CommandHandler {
             vehicleInfo.setIsVehicle(channelService.isVehicle(context));
             vehicleInfo.setLastHeartbeatTime(new Date());
             vehicleInfo.setLoginTime(new Date());
-            String key = RedisConstants.VEHICLE_INFO + ":" + channelId;
-            redisTemplate.opsForValue().set(key, JSONObject.toJSONString(vehicleInfo));
-            redisTemplate.expire(key, properties.getHeartSeconds(), TimeUnit.SECONDS);
+            vehicleService.saveOrUpdateCache(context, vehicleInfo);
+
         } else {
             channelService.sendMessage(context, packet.makeResponse(AckEnum.FAIL));
             channelService.closeAndClean(context);
@@ -79,7 +74,7 @@ public class CommandHandler {
 
     @Command(VEHICLE_LOGOUT)
     public void vehicleLogout(ChannelHandlerContext context, GBT32960Packet packet) {
-        redisTemplate.opsForHash().delete(RedisConstants.VEHICLE_INFO, context.channel().id().asShortText());
+        vehicleService.deleteCache(context);
         channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
         channelService.closeAndClean(context);
     }
@@ -104,7 +99,7 @@ public class CommandHandler {
             platformInfo.setIp(inetSocketAddress.toString());
             platformInfo.setLastHeartbeatTime(new Date());
             platformInfo.setLoginTime(new Date());
-            redisTemplate.opsForHash().put(RedisConstants.PLATFORM_INFO, channelId, JSONObject.toJSONString(platformInfo));
+            platformService.saveOrUpdateCache(context, platformInfo);
             channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
         } else {
             channelService.sendMessage(context, packet.makeResponse(AckEnum.FAIL));
@@ -114,7 +109,7 @@ public class CommandHandler {
 
     @Command(PLATFORM_LOGOUT)
     public void platformLogout(ChannelHandlerContext context, GBT32960Packet packet) {
-        redisTemplate.opsForHash().delete(RedisConstants.PLATFORM_INFO, context.channel().id().asShortText());
+        platformService.deleteCache(context);
         channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
         channelService.closeAndClean(context);
     }
@@ -136,8 +131,11 @@ public class CommandHandler {
 
     @Command(HEARTBEAT)
     public void heartbeat(ChannelHandlerContext context, GBT32960Packet packet) {
-        String key = RedisConstants.VEHICLE_INFO + ":" + IChannelService.getChannelIdString(context);
-        redisTemplate.expire(key, properties.getHeartSeconds(), TimeUnit.SECONDS);
+        if (channelService.isVehicle(context)) {
+            vehicleService.refreshCacheExpire(context);
+        } else {
+            platformService.refreshCacheExpire(context);
+        }
         channelService.sendMessage(context, packet.makeResponse(AckEnum.SUCCESS));
     }
 
