@@ -1,6 +1,6 @@
 package com.camellya.gbt32960_3_tcp_server.protocol;
 
-import com.camellya.gbt32960_3_tcp_server.constant.enums.InfoReportDataEnum;
+import com.camellya.gbt32960_3_tcp_server.constant.enums.ReportInfoEnum;
 import com.camellya.gbt32960_3_tcp_server.protocol.infomodel.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +32,10 @@ public class InfoModel {
         time = new TimeModel(byteList);
         List<Byte> bytes = byteList.subList(6, byteList.size());
         while (!bytes.isEmpty()) {
-            InfoReportDataEnum infoReportDataEnum = InfoReportDataEnum.getInfoReportDataEnum(byteList.get(0));
+            ReportInfoEnum reportInfoEnum = ReportInfoEnum.getInfoReportDataEnum(byteList.get(0));
             List<Byte> dataList = byteList.subList(1, byteList.size());
             int length = 0;
-            switch (infoReportDataEnum) {
+            switch (reportInfoEnum) {
                 case VEHICLE -> {
                     vehicle = new VehicleModel(dataList);
                     length = vehicle.getLength();
@@ -64,7 +64,10 @@ public class InfoModel {
                     alarm = new AlarmModel(dataList);
                     length = alarm.getLength();
                 }
-                case UNKNOWN -> log.warn("未知的上报数据:{}", byteList.get(0).intValue());
+                case UNKNOWN -> {
+                    log.warn("未知的上报数据:{}", byteList);
+                    return;
+                }
             }
             bytes = byteList.subList(1 + length, byteList.size());
         }

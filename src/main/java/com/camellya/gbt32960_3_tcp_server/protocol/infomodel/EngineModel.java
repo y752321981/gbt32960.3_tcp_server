@@ -2,17 +2,20 @@ package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
 import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 /**
  * 发动机数据
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class EngineModel {
+public class EngineModel extends BaseInfoModel {
 
     private static final int FIXED_LENGTH = 5;
 
+    @Override
     public int getLength() {
         return FIXED_LENGTH;
     }

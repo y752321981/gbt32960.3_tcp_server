@@ -2,6 +2,7 @@ package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
 import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,15 +10,12 @@ import java.util.List;
 /**
  * 燃料电池
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class FuelCellModel {
+public class FuelCellModel extends BaseInfoModel {
 
     private static final int FIXED_LENGTH = 17;
 
-
-    public int getLength() {
-        return FIXED_LENGTH + probeCount;
-    }
 
     // 电压，（单位0.1V），0xfffe异常，0xffff无效
     private Character voltage;
@@ -54,6 +52,12 @@ public class FuelCellModel {
 
     // 高压DC/DC状态 1-工作, 2-断开，0xfe异常，0xff无效
     private Byte dcDcStatus;
+
+    @Override
+    public int getLength() {
+        return FIXED_LENGTH + probeCount;
+    }
+
 
     public FuelCellModel(List<Byte> dataList) {
         this.voltage = ByteUtil.byteArrayToChar(dataList.subList(0, 2));

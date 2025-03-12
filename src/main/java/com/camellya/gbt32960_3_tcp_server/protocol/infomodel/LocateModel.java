@@ -2,19 +2,17 @@ package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
 import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class LocateModel {
+public class LocateModel extends BaseInfoModel {
 
     private static final int FIXED_LENGTH = 9;
-
-    public int getLength() {
-        return FIXED_LENGTH;
-    }
 
     /**
      * 定位状态
@@ -31,6 +29,10 @@ public class LocateModel {
      */
     private Long latitude;
 
+    @Override
+    public int getLength() {
+        return FIXED_LENGTH;
+    }
 
     /**
      * @return {@code true} 有效 {@code false} 有效

@@ -2,20 +2,18 @@ package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
 import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 /**
  * 整车数据
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class VehicleModel {
+public class VehicleModel extends BaseInfoModel {
 
     private static final int FIXED_LENGTH = 20;
-
-    public int getLength() {
-        return FIXED_LENGTH;
-    }
 
     // 车辆状态，1启动，2熄火，3其他，0xfe异常，0xff无效
     private Byte vehicleStatus;
@@ -58,6 +56,11 @@ public class VehicleModel {
 
     // 预留
     private Character reserve;
+
+    @Override
+    public int getLength() {
+        return FIXED_LENGTH;
+    }
 
     public VehicleModel(List<Byte> dataList) {
         this.vehicleStatus = dataList.get(0);

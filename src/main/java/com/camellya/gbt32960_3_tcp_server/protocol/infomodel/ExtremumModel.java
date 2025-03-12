@@ -2,14 +2,16 @@ package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
 import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
 /**
  * 极值数据
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class ExtremumModel {
+public class ExtremumModel extends BaseInfoModel {
 
     private static final int Fixed_Length = 14;
 
@@ -49,6 +51,7 @@ public class ExtremumModel {
     // 最低温度值 0-250 单位(1摄氏度), 偏移40, 值域(-40 - 210摄氏度), 0xfe表示异常, 0xff表示无效
     private Byte temperatureMin;
 
+    @Override
     public int getLength() {
         return Fixed_Length;
     }

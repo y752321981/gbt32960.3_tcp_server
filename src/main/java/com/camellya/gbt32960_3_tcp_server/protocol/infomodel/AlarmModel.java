@@ -2,12 +2,14 @@ package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
 import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class AlarmModel {
+public class AlarmModel extends BaseInfoModel {
 
     private static final int FIXED_LENGTH = 9;
 
@@ -41,6 +43,7 @@ public class AlarmModel {
     // 其他故障代码列表
     private List<Long> failuresOthersErrorCode;
 
+    @Override
     public int getLength() {
         return FIXED_LENGTH + totalFailuresDevices + totalFailuresDriverEngines + totalFailuresEngines + totalFailuresOthers;
     }

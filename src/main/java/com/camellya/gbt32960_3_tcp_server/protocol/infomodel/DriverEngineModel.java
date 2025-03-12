@@ -2,6 +2,7 @@ package com.camellya.gbt32960_3_tcp_server.protocol.infomodel;
 
 import com.camellya.gbt32960_3_tcp_server.utils.ByteUtil;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,18 +10,20 @@ import java.util.List;
 /**
  * 驱动电机数据
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class DriverEngineModel {
-
-    public int getLength() {
-        return count * EngineData.LENGTH + 1;
-    }
+public class DriverEngineModel extends BaseInfoModel {
 
     // 驱动电机个数
     private Byte count;
 
     // 驱动电机数据列表
     private List<EngineData> dataList;
+
+    @Override
+    public int getLength() {
+        return count * EngineData.LENGTH + 1;
+    }
 
     @Data
     static class EngineData {
